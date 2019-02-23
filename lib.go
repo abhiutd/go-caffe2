@@ -1,5 +1,5 @@
-package tflite
+package caffe2
 
-// #cgo CXXFLAGS: -std=c++11 -I${SRCDIR}/cbits -O3 -Wall -g -Wno-sign-compare -Wno-unused-function  -I/Users/abhiutd/workspace/scratch/tflite/tensorflow -I/Users/abhiutd/workspace/scratch/flatbuffers/flatbuffers/include
-// #cgo LDFLAGS: -lstdc++ -L/Users/abhiutd/workspace/scratch/android-ndk -llog -L/Users/abhiutd/workspace/scratch/tflite/lib/tensorflow/contrib/lite -ltflite -lframework -L/Users/abhiutd/workspace/scratch/flatbuffers/flatbuffers
+// #cgo CXXFLAGS: -std=c++11 -I${SRCDIR}/cbits -O3 -Wall -g -Wno-sign-compare -Wno-unused-function  -I/Users/abhiutd/workspace/scratch/caffe2/pytorch -I/Users/abhiutd/workspace/scratch/caffe2/pytorch/aten/src -I/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_android -I/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_host_protoc/include
+// #cgo LDFLAGS: -lstdc++ -L/Users/abhiutd/workspace/scratch/android-ndk -llog -L/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_android/lib -lcaffe2_detectron_ops -lonnxifi_dummy -L/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_android/lib/libcaffe2.a -L/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_android/lib/libcaffe2_protos.a -L/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_android/lib/libcpuinfo.a -L/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_android/lib/libnnpack.a -L/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_android/lib/libnnpack_reference_layers.a -L/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_android/lib/libqnnpack.a -L/Users/abhiutd/workspace/scratch/caffe2/pytorch/build_android/lib/libprotobuf.a 
 import "C"

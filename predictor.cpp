@@ -15,8 +15,8 @@
 #include <caffe2/core/operator.h>
 #include <caffe2/utils/proto_utils.h>
 #include <caffe2/core/types.h>
-#include <caffe2/onnx/backend.h>
-#include <caffe2/onnx/backend_rep.h>
+//#include <caffe2/onnx/backend.h>
+//#include <caffe2/onnx/backend_rep.h>
 
 #include <caffe2/proto/caffe2.pb.h>
 
@@ -93,14 +93,14 @@ void Predictor::Predict(float* inputData, std::string input_type, const int chan
 		result_ = nullptr;
 	}
 
-	const auto data_size = batch * channels * width * height;
+	const auto data_size = batch_ * channels * width * height;
 
 	std::vector<float> data(data_size);
 	std::copy(inputData, inputData + data_size, data.begin());
 
-	std::vector<int64_t> dims({batch}, channels, width, height});
+	std::vector<int64_t> dims({batch_, channels, width, height});
 
-	auto input_name = input_names[0];
+	auto input_name = input_names_[0];
 	auto *blob = ws_->GetBlob(input_name);
 	if(blob == nullptr) {
 		blob = ws_->CreateBlob(input_name);
@@ -121,10 +121,19 @@ void Predictor::Predict(float* inputData, std::string input_type, const int chan
 		throw std::runtime_error("output blob does not exist");	
 	}
 	auto output_tensor = output_blob->Get<TensorCPU>();
-	pred_len_ = output_tensor.size() / batch_size;
+	pred_len_ = output_tensor.size() / batch_;
 	result_ = (void *)malloc(output_tensor.nbytes());
 	memcpy(result_, output_tensor.raw_data(), output_tensor.nbytes());
 
+}
+
+static void set_operator_engine(NetDef *net, int mode) {
+   net->mutable_device_option()->set_device_type(TypeToProto(mode));
+
+   for (int i = 0; i < net->op_size(); i++) {
+     caffe2::OperatorDef *op_def = net->mutable_op(i);
+     op_def->mutable_device_option()->set_device_type(TypeToProto(mode));
+   }
 }
 
 PredictorContext NewCaffe2(char *init_net_file, char *pred_net_file, int batch,
