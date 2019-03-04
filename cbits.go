@@ -7,16 +7,16 @@ import "C"
 import (
 	"fmt"
 	"unsafe"
-	"image"
-	"path/filepath"
+	//"image"
+	//"path/filepath"
 	"sort"
   "os"
   "bufio"
 
-	"github.com/anthonynsimon/bild/imgio"
-  "github.com/anthonynsimon/bild/transform"
+	//"github.com/anthonynsimon/bild/imgio"
+  //"github.com/anthonynsimon/bild/transform"
 	"github.com/Unknwon/com"
-	"github.com/k0kubun/pp"
+	//"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"github.com/rai-project/dlframework"
 	"github.com/rai-project/dlframework/framework/feature"
@@ -142,11 +142,13 @@ func ReadPredictionOutput(p *PredictorData, labelFile string) (string, error) {
 		return "", errors.New("empty predictions")
 	}
 	cPredictions := C.GetPredictionsCaffe2(p.ctx)
+	
 	if cPredictions == nil {
 		return "", errors.New("empty predictions")
 	}
 
 	slice := (*[1 << 15]float32)(unsafe.Pointer(cPredictions))[:length:length]
+	
 	var labels []string
   f, err := os.Open(labelFile)
   if err != nil {

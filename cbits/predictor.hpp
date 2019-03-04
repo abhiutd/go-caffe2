@@ -9,13 +9,13 @@ extern "C" {
 
 typedef void *PredictorContext;
 
-PredictorContext NewCaffe2(char *model_file, int batch, int mode);
+PredictorContext NewCaffe2(char *init_net_file, char *pred_net_file, int batch, int mode);
 
 void SetModeCaffe2(int mode);
 
 void InitCaffe2();
 
-void PredictCaffe2(PredictorContext pred, float *inputData);
+void PredictCaffe2(PredictorContext pred, float *inputData, const char* input_type, const int batch, const int channels, const int width, const int height);
 
 const float *GetPredictionsCaffe2(PredictorContext pred);
 
