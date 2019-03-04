@@ -9,33 +9,32 @@ import (
 	"unsafe"
 	//"image"
 	//"path/filepath"
+	"bufio"
+	"os"
 	"sort"
-  "os"
-  "bufio"
 
 	//"github.com/anthonynsimon/bild/imgio"
-  //"github.com/anthonynsimon/bild/transform"
+	//"github.com/anthonynsimon/bild/transform"
 	"github.com/Unknwon/com"
 	//"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"github.com/rai-project/dlframework"
 	"github.com/rai-project/dlframework/framework/feature"
-
 )
 
 // accelerator modes
 const (
-	CPUMode = 0
-	GPUMode = 1
-	DSPMode = 2
+	CPUMode        = 0
+	GPUMode        = 1
+	DSPMode        = 2
 	VisualCoreMode = 3
 )
 
 // struct for keeping hold of predictor
 type PredictorData struct {
-	ctx	C.PredictorContext
-	mode	int
-	batch	int
+	ctx   C.PredictorContext
+	mode  int
+	batch int
 }
 
 // make mode and batch public
@@ -56,9 +55,9 @@ func New(model_init string, model_pred string, mode, batch int) (*PredictorData,
 		return nil, errors.Errorf("file %s not found", modelFile_init)
 	}
 	modelFile_pred := model_pred
-  if !com.IsFile(modelFile_pred) {
+	if !com.IsFile(modelFile_pred) {
 		return nil, errors.Errorf("file %s not found", modelFile_pred)
-  }
+	}
 
 	// set device for acceleration
 	switch mode {
@@ -81,8 +80,8 @@ func New(model_init string, model_pred string, mode, batch int) (*PredictorData,
 			C.int(batch),
 			C.int(mode),
 		),
-		mode:	mode,
-		batch:	batch,
+		mode:  mode,
+		batch: batch,
 	}, nil
 }
 
@@ -95,11 +94,11 @@ func SetUseGPU() {
 }
 
 func SetUseDSP() {
-   C.SetModeCaffe2(C.int(DSPMode))
- }
+	C.SetModeCaffe2(C.int(DSPMode))
+}
 
 func SetUseVisualCore() {
-   C.SetModeCaffe2(C.int(VisualCoreMode))
+	C.SetModeCaffe2(C.int(VisualCoreMode))
 }
 
 func init() {
@@ -142,40 +141,40 @@ func ReadPredictionOutput(p *PredictorData, labelFile string) (string, error) {
 		return "", errors.New("empty predictions")
 	}
 	cPredictions := C.GetPredictionsCaffe2(p.ctx)
-	
+
 	if cPredictions == nil {
 		return "", errors.New("empty predictions")
 	}
 
 	slice := (*[1 << 15]float32)(unsafe.Pointer(cPredictions))[:length:length]
-	
-	var labels []string
-  f, err := os.Open(labelFile)
-  if err != nil {
-		panic(err)
-  }
 
-  scanner := bufio.NewScanner(f)
-  for scanner.Scan() {
+	var labels []string
+	f, err := os.Open(labelFile)
+	if err != nil {
+		panic(err)
+	}
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
 		line := scanner.Text()
 		labels = append(labels, line)
-  }
+	}
 
-  features := make([]dlframework.Features, batchSize)
-  featuresLen := len(slice) / batchSize
+	features := make([]dlframework.Features, batchSize)
+	featuresLen := len(slice) / batchSize
 
-  for ii := 0; ii < batchSize; ii++ {
+	for ii := 0; ii < batchSize; ii++ {
 		rprobs := make([]*dlframework.Feature, featuresLen)
-    for jj := 0; jj < featuresLen; jj++ {
+		for jj := 0; jj < featuresLen; jj++ {
 			rprobs[jj] = feature.New(
-      feature.ClassificationIndex(int32(jj)),
-      feature.ClassificationLabel(labels[jj]),
-      feature.Probability(slice[ii*featuresLen+jj]),
-      )
-    }
-    sort.Sort(dlframework.Features(rprobs))
-    features[ii] = rprobs
-  }
+				feature.ClassificationIndex(int32(jj)),
+				feature.ClassificationLabel(labels[jj]),
+				feature.Probability(slice[ii*featuresLen+jj]),
+			)
+		}
+		sort.Sort(dlframework.Features(rprobs))
+		features[ii] = rprobs
+	}
 
 	top1 := features[0][0]
 	return top1.GetClassification().GetLabel(), nil
