@@ -42,14 +42,14 @@ using Prediction = std::pair<int, float>;
 class Predictor {
   public:
     Predictor(NetDef *init_net, NetDef *net_def, int batch, int mode);
-    void Predict(float* inputData, std::string input_type, const int channels, const int width, const int height);
+    void Predict(float* inputData, std::string input_type, const int batch, const int channels, const int width, const int height);
 
 		Workspace *ws_{nullptr};
     NetBase *net_;
 		std::vector<string> input_names_;
 		std::vector<string> output_names_;
     int width_, height_, channels_;
-    int batch_;
+    int batch_ = 1;
     int pred_len_;
     int mode_ = 0;
     void *result_{nullptr};
@@ -86,13 +86,14 @@ Predictor::Predictor(NetDef *init_net, NetDef *net_def, int batch, int mode) {
   batch_ = batch;
 }
 
-void Predictor::Predict(float* inputData, std::string input_type, const int channels, const int width, const int height) {
+void Predictor::Predict(float* inputData, std::string input_type, const int batch, const int channels, const int width, const int height) {
 
 	if(result_ != nullptr) {
 		free(result_);
 		result_ = nullptr;
 	}
 
+	batch_ = batch;
 	const auto data_size = batch_ * channels * width * height;
 
 	std::vector<float> data(data_size);
@@ -120,7 +121,7 @@ void Predictor::Predict(float* inputData, std::string input_type, const int chan
 	if(output_blob == nullptr) {
 		throw std::runtime_error("output blob does not exist");	
 	}
-	auto output_tensor = output_blob->Get<TensorCPU>();
+	auto output_tensor = output_blob->Get<TensorCPU>().Clone();
 	pred_len_ = output_tensor.size() / batch_;
 	result_ = (void *)malloc(output_tensor.nbytes());
 	memcpy(result_, output_tensor.raw_data(), output_tensor.nbytes());
@@ -128,12 +129,16 @@ void Predictor::Predict(float* inputData, std::string input_type, const int chan
 }
 
 static void set_operator_engine(NetDef *net, int mode) {
-   net->mutable_device_option()->set_device_type(TypeToProto(mode));
-
-   for (int i = 0; i < net->op_size(); i++) {
-     caffe2::OperatorDef *op_def = net->mutable_op(i);
-     op_def->mutable_device_option()->set_device_type(TypeToProto(mode));
-   }
+	// using CPU as of now
+	// need to enable usage of different accelerators underneath
+	//net->mutable_device_option()->set_device_type(TypeToProto(mode));
+	net->mutable_device_option()->set_device_type(TypeToProto(DeviceType::CPU));
+  
+	for (int i = 0; i < net->op_size(); i++) {
+    caffe2::OperatorDef *op_def = net->mutable_op(i);
+    //op_def->mutable_device_option()->set_device_type(TypeToProto(mode));
+		op_def->mutable_device_option()->set_device_type(TypeToProto(DeviceType::CPU));
+  }
 }
 
 PredictorContext NewCaffe2(char *init_net_file, char *pred_net_file, int batch,
@@ -177,8 +182,10 @@ void PredictCaffe2(PredictorContext pred, float* inputData, const char* input_ty
   if (predictor == nullptr) {
     return;
   }
+	
   predictor->Predict(inputData, input_type, batch, channels, width, height);
-  return;
+  // Predict(float* inputData, std::string input_type, const int batch, const int channels, const int width, const int height)
+	return;
 }
 
 const float*GetPredictionsCaffe2(PredictorContext pred) {
