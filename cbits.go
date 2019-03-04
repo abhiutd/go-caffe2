@@ -48,13 +48,17 @@ func NewPredictorData() *PredictorData {
 	return &PredictorData{}
 }
 
-func New(model string, mode, batch int) (*PredictorData, error) {
+func New(model_init string, model_pred string, mode, batch int) (*PredictorData, error) {
 
 	// fetch model file
-	modelFile := model
-	if !com.IsFile(modelFile) {
-		return nil, errors.Errorf("file %s not found", modelFile)
+	modelFile_init := model_init
+	if !com.IsFile(modelFile_init) {
+		return nil, errors.Errorf("file %s not found", modelFile_init)
 	}
+	modelFile_pred := model_pred
+  if !com.IsFile(modelFile_pred) {
+		return nil, errors.Errorf("file %s not found", modelFile_pred)
+  }
 
 	// set device for acceleration
 	switch mode {
@@ -72,7 +76,8 @@ func New(model string, mode, batch int) (*PredictorData, error) {
 
 	return &PredictorData{
 		ctx: C.NewCaffe2(
-			C.CString(modelFile),
+			C.CString(modelFile_init),
+			C.CString(modelFile_pred),
 			C.int(batch),
 			C.int(mode),
 		),
@@ -109,8 +114,13 @@ func Predict(p *PredictorData, data []byte) error {
 	}
 
 	ptr := (*C.float)(unsafe.Pointer(&data[0]))
-
-	C.PredictCaffe2(p.ctx, ptr)
+	// use default inputTypes, channels, dimensions
+	inputType := C.CString("float")
+	defer C.free(unsafe.Pointer(inputType))
+	channels := 3
+	width := 224
+	height := 224
+	C.PredictCaffe2(p.ctx, ptr, inputType, C.int(p.batch), C.int(channels), C.int(width), C.int(height))
 
 	return nil
 }
