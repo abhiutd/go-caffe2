@@ -40,28 +40,28 @@ using Prediction = std::pair<int, float>;
   Predictor class takes in model files (init_net.pb and pred_net.pb) batch size and device mode for inference
 */
 class Predictor {
-  public:
-    Predictor(NetDef *init_net, NetDef *net_def, int batch, int mode);
-    void Predict(float* inputData, std::string input_type, const int batch, const int channels, const int width, const int height);
+	public:
+		Predictor(NetDef *init_net, NetDef *net_def, int batch, int mode);
+		void Predict(float* inputData, std::string input_type, const int batch, const int channels, const int width, const int height);
 
 		Workspace *ws_{nullptr};
-    NetBase *net_;
+		NetBase *net_;
 		std::vector<string> input_names_;
 		std::vector<string> output_names_;
-    int width_, height_, channels_;
-    int batch_ = 1;
-    int pred_len_;
-    int mode_ = 0;
-    void *result_{nullptr};
+		int width_, height_, channels_;
+		int batch_ = 1;
+		int pred_len_;
+		int mode_ = 0;
+		void *result_{nullptr};
 };
 
 Predictor::Predictor(NetDef *init_net, NetDef *net_def, int batch, int mode) {
-  /* Load the network. */
+	/* Load the network. */
 	ws_ = new Workspace();
 	mode_ = mode;
 	ws_->RunNetOnce(*init_net);
 	for(auto in : net_def->external_input()) {
-	
+
 		auto* blob = ws_->GetBlob(in);
 		if(!blob) {
 			ws_->CreateBlob(in);	
@@ -70,20 +70,20 @@ Predictor::Predictor(NetDef *init_net, NetDef *net_def, int batch, int mode) {
 	}
 	for(auto out : net_def->external_output()) {
 
-     auto* blob = ws_->GetBlob(out);
-     if(!blob) {
-       ws_->CreateBlob(out);
-     }
-     output_names_.emplace_back(out);
-  }
+		auto* blob = ws_->GetBlob(out);
+		if(!blob) {
+			ws_->CreateBlob(out);
+		}
+		output_names_.emplace_back(out);
+	}
 	if(!net_def->has_name()) {
 		net_def->set_name("go-caffe2");	
 	}
 	net_ = ws_->CreateNet(*net_def);
 
-  assert(net_ != nullptr);
-  mode_ = mode;
-  batch_ = batch;
+	assert(net_ != nullptr);
+	mode_ = mode;
+	batch_ = batch;
 }
 
 void Predictor::Predict(float* inputData, std::string input_type, const int batch, const int channels, const int width, const int height) {
